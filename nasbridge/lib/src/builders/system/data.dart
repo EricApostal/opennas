@@ -1,5 +1,7 @@
 import 'package:nasbridge/src/builders/builder.dart';
-import 'package:nasbridge/src/models/system/system_data.dart';
+import 'package:nasbridge/src/models/system/data.dart';
+
+// idk why I made a builder for this, I don't see any use case for it
 
 /// Builder for creating a new SystemInfo instance.
 class SystemInfoBuilder extends CreateBuilder<SystemInfo> {

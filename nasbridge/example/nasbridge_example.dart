@@ -6,7 +6,7 @@ import 'package:nasbridge/src/client_options.dart';
 import 'package:nasbridge/src/plugin/logging.dart';
 
 void main() async {
-  print("initializing nasbridge");
+  print("Running example");
   final client = await Nasbridge.connectGateway(
     'root',
     'root',
@@ -20,23 +20,17 @@ void main() async {
   client.system.getInfo().then((sysInfo) {
     print(sysInfo);
   });
-
-  // client.onConnected.listen((event) async {
-  //   print("connected!");
-  //   // print('Received event: $event');
-  //   // print("getting system info async");
-  //   // client.system.getInfo().then((sysInfo) {
-  //   //   print(sysInfo);
-  //   // });
-  // });
-
-  // client.onEvent.listen((event) async {
-  //   print('Received event: $event');
-  //   if (event is ResultEvent) {
-  //     print("result event");
-  //     print(event.result);
-  //   }
-  // });
+  client.system.downloadDebug();
+  print((await client.system.getAdvancedConfig()).motd);
+  print(await client.system.getBootId());
+  print(await client.system.getBuildTime());
+  print(await client.system.getGeneralConfig());
+  print(await client.system.getHostId());
+  print(await client.system.getProductType());
+  print(await client.system.getReleaseNotesUrl());
+  print(await client.system.getState());
+  print(await client.system.getVersion());
+  // client.system.getVersionShort();
 
   await Future.delayed(Duration(seconds: 10));
 }

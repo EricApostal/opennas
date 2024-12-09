@@ -5,6 +5,7 @@ import 'package:nasbridge/src/errors.dart';
 import 'package:nasbridge/src/gateway/connection.dart';
 import 'package:nasbridge/src/gateway/message.dart';
 import 'package:nasbridge/src/models/gateway/events/event.dart';
+import 'package:uuid/uuid.dart';
 
 class Gateway {
   final NasbridgeGateway client;
@@ -127,7 +128,7 @@ class Gateway {
   Future<dynamic> sendMethod(String method,
       [List<dynamic> params = const []]) async {
     final completer = Completer<dynamic>();
-    final id = _generateId();
+    final id = Uuid().v4();
 
     final subscription = events.listen((event) {
       if (event is ResultEvent && event.id == id) {
@@ -157,8 +158,6 @@ class Gateway {
     await ready;
     return sendMethod(method, params);
   }
-
-  String _generateId() => DateTime.now().millisecondsSinceEpoch.toString();
 
   Future<void> close() async {
     _logger.info('Closing gateway connection');
