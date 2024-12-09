@@ -1,5 +1,5 @@
-import 'package:nasbridge/src/builders/system/advanced_config_update.dart';
-import 'package:nasbridge/src/builders/system/general_config_update.dart';
+import 'package:nasbridge/src/builders/system/advanced_config.dart';
+import 'package:nasbridge/src/builders/system/general_config.dart';
 import 'package:nasbridge/src/builders/system/npt_server.dart';
 import 'package:nasbridge/src/client.dart';
 import 'package:nasbridge/src/gateway/managers/manager.dart';
