@@ -1,4 +1,4 @@
-import 'package:nasbridge/src/models/websocket/events/event.dart';
+import 'package:nasbridge/src/models/gateway/events/event.dart';
 
 /// Parser for TrueNAS WebSocket events
 mixin class EventParser {

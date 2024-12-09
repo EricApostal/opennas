@@ -1,5 +1,5 @@
 import 'package:nasbridge/src/api_options.dart';
-import 'package:nasbridge/src/models/websocket/events/event.dart';
+import 'package:nasbridge/src/models/gateway/events/event.dart';
 import 'package:nasbridge/src/utils/to_string_helper/base_impl.dart';
 import 'package:uuid/uuid.dart';
 

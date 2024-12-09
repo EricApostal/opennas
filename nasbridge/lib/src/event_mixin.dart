@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:nasbridge/src/client.dart';
-import 'package:nasbridge/src/models/websocket/events/event.dart';
+import 'package:nasbridge/src/models/gateway/events/event.dart';
 import 'package:nasbridge/src/utils/iterable_extension.dart';
 
 /// An internal mixin to add event streams to a TrueNAS client.

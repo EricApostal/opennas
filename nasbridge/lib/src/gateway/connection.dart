@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:logging/logging.dart';
 import 'package:nasbridge/src/gateway/message.dart';
-import 'package:nasbridge/src/models/websocket/events/event.dart';
+import 'package:nasbridge/src/models/gateway/events/event.dart';
 import 'package:nasbridge/src/gateway/event_parser.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 

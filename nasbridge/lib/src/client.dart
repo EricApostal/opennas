@@ -8,6 +8,7 @@ import 'package:nasbridge/src/errors.dart';
 import 'package:nasbridge/src/event_mixin.dart';
 import 'package:nasbridge/src/gateway/gateway.dart';
 import 'package:nasbridge/src/http/handler.dart';
+import 'package:nasbridge/src/manager_mixin.dart';
 import 'package:nasbridge/src/plugin/plugin.dart';
 import 'package:runtime_type/runtime_type.dart';
 
@@ -149,7 +150,7 @@ class NasbridgeRest implements Nasbridge {
 }
 
 /// WebSocket-enabled client implementation
-class NasbridgeGateway with EventMixin implements NasbridgeRest {
+class NasbridgeGateway with ManagerMixin, EventMixin implements NasbridgeRest {
   @override
   final GatewayApiOptions apiOptions;
 

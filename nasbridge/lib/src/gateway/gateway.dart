@@ -4,7 +4,7 @@ import 'package:nasbridge/src/client.dart';
 import 'package:nasbridge/src/errors.dart';
 import 'package:nasbridge/src/gateway/connection.dart';
 import 'package:nasbridge/src/gateway/message.dart';
-import 'package:nasbridge/src/models/websocket/events/event.dart';
+import 'package:nasbridge/src/models/gateway/events/event.dart';
 
 /// Main gateway class for handling TrueNAS WebSocket connections
 class Gateway {
@@ -30,8 +30,11 @@ class Gateway {
     final connection = await GatewayConnection.connect(
       websocketUri.toString(),
       () async {
+        // this doesn't call initially and I have no idea why
+        print("connecting...");
         // Initial connection handler
-        await client.gateway._authenticate();
+        // await client.gateway._authenticate();
+        await client.gateway._handleInitialConnection();
       },
     );
 
@@ -39,17 +42,22 @@ class Gateway {
   }
 
   void _handleEvent(GatewayEvent event) {
+    print("HANDLING");
     if (event is ConnectedEvent) {
-      _handleInitialConnection();
+      _authenticate();
     } else if (event is ResultEvent) {
-      _handleResponse(event);
+      print("nah");
+      // _handleResponse(event);
     } else if (event is ErrorEvent) {
       _handleError(event);
+    } else {
+      print("not handling event");
     }
   }
 
   Future<void> _handleInitialConnection() async {
     // Send initial connect message
+    print("handling initial connection");
     await connection.add(Send(method: 'connect', params: [], data: {
       'msg': 'connect',
       'version': '1',
@@ -61,7 +69,8 @@ class Gateway {
   }
 
   Future<void> _authenticate() async {
-    if (_isAuthenticated) return;
+    print("authenticating!");
+    // if (_isAuthenticated) return;
 
     _logger.info('Authenticating with TrueNAS');
     await connection.add(Send(
@@ -95,10 +104,6 @@ class Gateway {
   /// Send a method call to TrueNAS
   Future<dynamic> sendMethod(String method,
       [List<dynamic> params = const []]) async {
-    // if (!_isAuthenticated) {
-    //   throw NasbridgeException('Must be authenticated to send methods');
-    // }
-
     final completer = Completer<dynamic>();
     final id = _generateId();
 
