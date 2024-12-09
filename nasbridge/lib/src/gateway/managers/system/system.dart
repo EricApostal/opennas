@@ -14,9 +14,7 @@ class SystemManager extends Manager<SystemInfo> {
   /// Returns a [Future] that completes with a [SystemInfo] instance.
   Future<SystemInfo> getInfo() async {
     final gatewayClient = client as NasbridgeGateway;
-    print("sending method");
     final response = await gatewayClient.sendMethod('system.info');
-    print("got response!");
     return parseSystemInfo(response as Map<String, Object?>);
   }
 

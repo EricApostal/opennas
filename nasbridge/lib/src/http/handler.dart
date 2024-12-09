@@ -88,7 +88,6 @@ class HttpHandler {
   /// Execute [request] and throw the response if it is not a [HttpResponseSuccess].
   Future<HttpResponseSuccess> executeSafe(HttpRequest request) async {
     final response = await execute(request);
-    print(response);
 
     if (response is! HttpResponseSuccess) {
       throw response;

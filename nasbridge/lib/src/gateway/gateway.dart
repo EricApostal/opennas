@@ -6,21 +6,30 @@ import 'package:nasbridge/src/gateway/connection.dart';
 import 'package:nasbridge/src/gateway/message.dart';
 import 'package:nasbridge/src/models/gateway/events/event.dart';
 
-/// Main gateway class for handling TrueNAS WebSocket connections
 class Gateway {
   final NasbridgeGateway client;
   final Uri endpoint;
   final GatewayConnection connection;
   final _logger = Logger('Gateway');
   bool _isAuthenticated = false;
+  final _connectionCompleter = Completer<void>();
+  final _readyCompleter = Completer<void>();
 
   /// Stream of all events from the gateway
   late final Stream<GatewayEvent> events = connection.asBroadcastStream();
 
+  /// Future that completes when the gateway is fully connected and authenticated
+  Future<void> get ready => _readyCompleter.future;
+
   Gateway(this.client, this.connection, this.endpoint) {
     connection.listen(
       _handleEvent,
-      onError: (error, stack) => _logger.severe('Gateway error', error, stack),
+      onError: (error, stack) {
+        _logger.severe('Gateway error', error, stack);
+        if (!_readyCompleter.isCompleted) {
+          _readyCompleter.completeError(error);
+        }
+      },
       onDone: () => _logger.info('Gateway connection closed'),
     );
   }
@@ -30,75 +39,88 @@ class Gateway {
     final connection = await GatewayConnection.connect(
       websocketUri.toString(),
       () async {
-        // this doesn't call initially and I have no idea why
-        print("connecting...");
-        // Initial connection handler
-        // await client.gateway._authenticate();
-        await client.gateway._handleInitialConnection();
+        // this part is actually fucking useless
+        // it's for identification for firebridge
+        // but it literally just doesn't work
+
+        // will remove later
       },
     );
 
-    return Gateway(client, connection, websocketUri);
+    final gateway = Gateway(client, connection, websocketUri);
+    await gateway._handleInitialConnection();
+    return gateway;
   }
 
   void _handleEvent(GatewayEvent event) {
-    print("HANDLING");
+    _logger.fine('Handling event: ${event.runtimeType}');
+
     if (event is ConnectedEvent) {
-      _authenticate();
-    } else if (event is ResultEvent) {
-      print("nah");
-      // _handleResponse(event);
+      if (!_connectionCompleter.isCompleted) {
+        _connectionCompleter.complete();
+      }
     } else if (event is ErrorEvent) {
       _handleError(event);
-    } else {
-      print("not handling event");
     }
   }
 
+  // yields until connection is established and authenticated
+  // this makes it such that we don't have to require the user to
+  // handle auth, and they can assume it's already handled by the
+  // time their code runs
   Future<void> _handleInitialConnection() async {
-    // Send initial connect message
-    print("handling initial connection");
-    await connection.add(Send(method: 'connect', params: [], data: {
-      'msg': 'connect',
-      'version': '1',
-      'support': ['1']
-    }));
+    _logger.info('Initializing connection');
+    try {
+      // Send initial connect message
+      await connection.add(Send(method: 'connect', params: [], data: {
+        'msg': 'connect',
+        'version': '1',
+        'support': ['1']
+      }));
 
-    // Proceed with authentication
-    await _authenticate();
+      await _connectionCompleter.future;
+      _logger.info('Connection established, proceeding with authentication');
+
+      await _authenticate();
+
+      // If we reach here, both connection and authentication are complete
+      if (!_readyCompleter.isCompleted) {
+        _readyCompleter.complete();
+      }
+    } catch (e) {
+      _logger.severe('Connection/authentication failed', e);
+      if (!_readyCompleter.isCompleted) {
+        _readyCompleter.completeError(e);
+      }
+      rethrow;
+    }
   }
 
   Future<void> _authenticate() async {
-    print("authenticating!");
-    // if (_isAuthenticated) return;
+    if (_isAuthenticated) return;
 
     _logger.info('Authenticating with TrueNAS');
-    await connection.add(Send(
-      method: 'auth.login',
-      params: [client.apiOptions.username, client.apiOptions.password],
-    ));
-  }
+    try {
+      final result = await sendMethod(
+        'auth.login',
+        [client.apiOptions.username, client.apiOptions.password],
+      );
 
-  void _handleResponse(ResultEvent event) {
-    if (!_isAuthenticated) {
-      // Handle authentication response
-      if (event.result == true) {
+      if (result == true) {
         _isAuthenticated = true;
         _logger.info('Successfully authenticated with TrueNAS');
       } else {
-        _logger.severe('Authentication failed');
-        throw NasbridgeException('Failed to authenticate with TrueNAS');
+        throw NasbridgeException('Authentication failed: Invalid credentials');
       }
+    } catch (e) {
+      _logger.severe('Authentication failed', e);
+      rethrow;
     }
   }
 
   void _handleError(ErrorEvent event) {
     final errorMessage = event.errorMessage ?? event.error ?? 'Unknown error';
     _logger.severe('Received error from TrueNAS: $errorMessage');
-
-    if (!_isAuthenticated) {
-      throw NasbridgeException('Authentication failed: $errorMessage');
-    }
   }
 
   /// Send a method call to TrueNAS
@@ -107,7 +129,6 @@ class Gateway {
     final completer = Completer<dynamic>();
     final id = _generateId();
 
-    // Set up listener for the response
     final subscription = events.listen((event) {
       if (event is ResultEvent && event.id == id) {
         completer.complete(event.result);
@@ -117,7 +138,6 @@ class Gateway {
       }
     });
 
-    // Send the request
     await connection.add(Send(
       method: method,
       params: params,
@@ -129,6 +149,13 @@ class Gateway {
     } finally {
       await subscription.cancel();
     }
+  }
+
+  /// Send an authenticated method call to TrueNAS
+  Future<dynamic> sendAuthenticatedMethod(String method,
+      [List<dynamic> params = const []]) async {
+    await ready;
+    return sendMethod(method, params);
   }
 
   String _generateId() => DateTime.now().millisecondsSinceEpoch.toString();

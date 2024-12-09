@@ -146,9 +146,8 @@ class AuthFailedEvent extends GatewayEvent {
 class ResultEvent extends GatewayEvent {
   final String? id;
   final dynamic result;
-  final String? method;
 
-  ResultEvent({this.id, this.result, this.method});
+  ResultEvent({this.id, this.result});
 }
 
 /// Event received when a method call fails
